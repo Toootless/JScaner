@@ -1,0 +1,27 @@
+# Core dependencies
+opencv-python>=4.8.0
+numpy>=1.24.0
+open3d>=0.17.0
+
+# GPU acceleration (optional)
+# Uncomment these for GPU support:
+# cupy-cuda12x>=12.0.0  # For NVIDIA GPUs with CUDA 12.x
+# opencv-contrib-python>=4.8.0  # OpenCV with additional modules
+
+# GUI and visualization
+tkinter-superwidgets>=0.2.0
+matplotlib>=3.7.0
+Pillow>=10.0.0
+
+# 3D processing and mesh generation
+scipy>=1.11.0
+scikit-image>=0.21.0
+trimesh>=4.0.0
+pymeshlab>=2023.12
+
+# Utilities
+tqdm>=4.65.0
+pathlib>=1.0.1
+
+# Performance monitoring
+psutil>=5.9.0
