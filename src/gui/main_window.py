@@ -231,13 +231,20 @@ class MainApplication:
         if self.image_capture.initialize_camera():
             self.is_camera_active = True
             self.update_camera_preview()
-            self.status_var.set("Camera started")
             
+            # Show camera type
+            camera_type = self.image_capture.get_camera_type()
+            self.status_var.set(f"Camera started - {camera_type}")
+            
+            # Check if using Kinect
+            if camera_type == "Kinect v2":
+                self.status_var.set("✓ Kinect v2 activated - RGB + Depth enabled!")
             # Check if C920 compatible
-            camera_info = self.image_capture.get_camera_info()
-            if camera_info.get('is_c920_compatible'):
-                self.status_var.set("Camera started - C920 optimized")
-                self.image_capture.optimize_for_3d_scanning()
+            elif hasattr(self.image_capture, 'get_camera_info'):
+                camera_info = self.image_capture.get_camera_info()
+                if camera_info.get('is_c920_compatible'):
+                    self.status_var.set("Camera started - C920 optimized")
+                    self.image_capture.optimize_for_3d_scanning()
         else:
             self.status_var.set("Camera failed to start - check diagnostics")
             messagebox.showerror("Camera Error", 

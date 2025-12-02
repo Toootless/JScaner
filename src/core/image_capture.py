@@ -2,6 +2,7 @@
 Image Capture Module
 
 Handles camera interface and image acquisition for 3D scanning with improved error handling.
+Supports both standard webcams and Kinect v2 sensors.
 """
 
 import cv2
@@ -9,20 +10,42 @@ import numpy as np
 import time
 from typing import List, Optional, Tuple
 import os
+from pathlib import Path
+
+# Try to import Kinect support
+try:
+    from .kinect_capture import KinectCapture
+    KINECT_AVAILABLE = True
+except ImportError:
+    KINECT_AVAILABLE = False
 
 class ImageCapture:
     """Manages camera interface and image capture for 3D scanning."""
     
-    def __init__(self, camera_id: int = 0):
+    def __init__(self, camera_id: int = 0, use_kinect: bool = True):
         """
         Initialize camera capture.
         
         Args:
             camera_id: Camera device ID (usually 0 for default camera)
+            use_kinect: Try to use Kinect if available (True) or force webcam (False)
         """
         self.camera_id = camera_id
         self.cap = None
         self.is_recording = False
+        self.use_kinect = use_kinect
+        self.kinect = None
+        self.kinect_active = False
+        
+        # Try to initialize Kinect if enabled
+        if KINECT_AVAILABLE and use_kinect:
+            self.kinect = KinectCapture()
+            if self.kinect.is_available() and self.kinect.initialize():
+                self.kinect_active = True
+                print("✓ Kinect sensor initialized and ready")
+            else:
+                print("⚠ Kinect not available, will use webcam")
+                self.kinect = None
         
     def diagnose_camera_issues(self):
         """
@@ -163,6 +186,13 @@ class ImageCapture:
         Returns:
             Frame as numpy array, or None if capture failed
         """
+        # Try Kinect first if active
+        if self.kinect_active and self.kinect is not None:
+            rgb_frame = self.kinect.get_rgb_frame()
+            if rgb_frame is not None:
+                return rgb_frame
+        
+        # Fallback to webcam
         if self.cap is None or not self.cap.isOpened():
             return None
             
@@ -377,6 +407,38 @@ class ImageCapture:
             
         except Exception as e:
             print(f"Warning: Could not optimize camera settings: {e}")
+    
+    def get_depth_frame(self) -> Optional[np.ndarray]:
+        """
+        Get depth frame from Kinect sensor.
+        
+        Returns:
+            Depth frame as numpy array (512x424 float32) or None if not available
+            Values in millimeters
+        """
+        if self.kinect_active and self.kinect is not None:
+            return self.kinect.get_depth_frame()
+        return None
+    
+    def has_depth_sensor(self) -> bool:
+        """
+        Check if a depth sensor (Kinect) is available.
+        
+        Returns:
+            True if Kinect is active, False otherwise
+        """
+        return self.kinect_active and self.kinect is not None
+    
+    def get_camera_type(self) -> str:
+        """
+        Get the type of camera being used.
+        
+        Returns:
+            "Kinect v2" if using Kinect, "Webcam" if using webcam
+        """
+        if self.kinect_active:
+            return "Kinect v2"
+        return "Webcam"
     
     def release(self):
         """Release camera resources."""

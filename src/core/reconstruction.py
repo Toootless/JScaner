@@ -173,7 +173,7 @@ class StereoReconstructor:
         
         return points_3d.T
     
-    def reconstruct_from_images(self, images: List[np.ndarray]) -> o3d.geometry.PointCloud:
+    def reconstruct_from_images(self, images: List[np.ndarray]) -> Optional['o3d.geometry.PointCloud']:
         """
         Reconstruct 3D point cloud from multiple images.
         
@@ -181,8 +181,12 @@ class StereoReconstructor:
             images: List of input images
             
         Returns:
-            Open3D point cloud
+            Open3D point cloud if available, or None
         """
+        if not HAS_OPEN3D:
+            print("Open3D not available for reconstruction")
+            return None
+            
         if len(images) < 2:
             raise ValueError("Need at least 2 images for reconstruction")
         
