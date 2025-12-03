@@ -5,6 +5,7 @@ A Python 3D scanning application that reconstructs 3D objects from multiple phot
 ## Features
 
 - **Advanced Grid Detection**: Multiple algorithms for detecting calibration patterns including 3D printer beds
+- **Dual Camera Support**: Works with Kinect v1 (Xbox 360) or standard USB webcams
 - **GPU Acceleration**: NVIDIA RTX 3060 support with CuPy for enhanced performance
 - **Auto-Load Calibration**: Automatically loads last saved calibration on startup
 - **External Image Import**: Load images from outside sources for processing or calibration
@@ -23,7 +24,10 @@ A Python 3D scanning application that reconstructs 3D objects from multiple phot
 - **Python 3.8-3.10**: Legacy support (may require older dependency versions)
 
 ### Hardware
-- **Logitech HD Pro Webcam C920** (recommended and tested)
+- **Camera Options**:
+  - Kinect v1 (Xbox 360 Kinect) - preferred with Windows drivers
+  - Logitech HD Pro Webcam C920 (standard USB webcam)
+  - Any OpenCV-compatible camera
 - **NVIDIA GPU**: Optional, enables CuPy acceleration (RTX 3060 tested)
 - Reference grid (3D printer bed or printed calibration pattern)
 - Windows/Linux/macOS
@@ -109,6 +113,17 @@ python main.py
 - `data/`: Sample data and calibration patterns
 - `examples/`: Example usage and tutorials
 - `tests/`: Unit tests
+
+## Camera Setup
+
+### Kinect v1 (Xbox 360)
+- **Status**: ✓ Fully Supported
+- **Setup**: Connect to USB port, install Windows drivers, select in GUI
+- **Docs**: See [KINECT_V1_INTEGRATION.md](docs/KINECT_V1_INTEGRATION.md)
+
+### Standard Webcam (Logitech C920, etc.)
+- **Status**: ✓ Fully Supported
+- **Setup**: Connect USB, select in Camera Settings, ready to use
 
 ## Technical Details
 
