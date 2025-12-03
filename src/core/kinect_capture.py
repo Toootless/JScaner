@@ -132,8 +132,7 @@ class KinectCapture:
             if frame is not None and frame.max() > 0:  # Non-empty frame
                 return frame
             
-            # Return test pattern showing Kinect is ready
-            # Create colorful pattern to confirm Kinect initialization
+            # Return informative test pattern showing Kinect status
             rgb_frame = np.zeros((480, 640, 3), dtype=np.uint8)
             
             # Add gradient background (blue to purple)
@@ -141,13 +140,21 @@ class KinectCapture:
                 ratio = i / 480
                 rgb_frame[i, :] = [int(100 + 150 * ratio), 50, int(150 + 100 * (1 - ratio))]
             
-            # Add text
+            # Add helpful text
             cv2.putText(rgb_frame, "Kinect v2 Sensor", 
-                       (180, 180), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (255, 255, 255), 2)
-            cv2.putText(rgb_frame, "Ready for Scanning", 
-                       (160, 230), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (200, 255, 200), 1)
-            cv2.putText(rgb_frame, "Click 'Capture Image' to scan", 
-                       (120, 280), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (200, 200, 255), 1)
+                       (180, 150), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (255, 255, 255), 2)
+            cv2.putText(rgb_frame, "Status: Initializing", 
+                       (180, 210), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (200, 255, 200), 1)
+            
+            # Add troubleshooting tips
+            cv2.putText(rgb_frame, "Troubleshooting:", 
+                       (50, 290), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (200, 200, 255), 1)
+            cv2.putText(rgb_frame, "1. Check USB 3.0 port connection", 
+                       (50, 320), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (150, 150, 255), 1)
+            cv2.putText(rgb_frame, "2. Verify libusbK drivers installed", 
+                       (50, 345), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (150, 150, 255), 1)
+            cv2.putText(rgb_frame, "3. See KINECT_INTEGRATION_STATUS.md", 
+                       (50, 370), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (150, 150, 255), 1)
             
             return rgb_frame
             
