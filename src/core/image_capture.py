@@ -140,6 +140,11 @@ class ImageCapture:
         try:
             print("Attempting to initialize camera...")
             
+            # If Kinect is active, just return True - will use frame display
+            if self.kinect_active and self.kinect is not None:
+                print("Using Kinect v2 for preview (test pattern)")
+                return True
+            
             # Release any existing capture first
             if self.cap is not None:
                 self.cap.release()
@@ -153,6 +158,7 @@ class ImageCapture:
                 (cv2.CAP_ANY, "Auto")             # OpenCV auto-select
             ]
             
+            # For Kinect, try camera indices 0, 1, 2 (Kinect often shows up as camera 1)
             for camera_id in [0, 1, 2]:
                 for backend, backend_name in backends_to_try:
                     try:
