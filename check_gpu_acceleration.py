@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 Check GPU acceleration capabilities in JScaner environment
 Verifies installed CUDA-related packages and their functionality
@@ -6,6 +7,13 @@ Verifies installed CUDA-related packages and their functionality
 
 import sys
 import platform
+import os
+
+# Force UTF-8 encoding on Windows
+if sys.platform == 'win32':
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 def check_gpu_packages():
     """Check for GPU acceleration packages."""
