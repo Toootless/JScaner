@@ -58,6 +58,9 @@ class MainApplication:
         # Auto-load last calibration
         self.auto_load_calibration()
         
+        # Auto-start Kinect on startup (prefer Kinect over webcam)
+        self.root.after(500, self.auto_start_kinect)
+        
     def create_widgets(self):
         """Create all GUI widgets."""
         # Main notebook for tabs
@@ -99,7 +102,7 @@ class MainApplication:
         
         ttk.Label(camera_select_frame, text="Select Camera:").pack(side=tk.LEFT, padx=5, pady=5)
         
-        self.camera_var = tk.StringVar(value="webcam")
+        self.camera_var = tk.StringVar(value="kinect")
         ttk.Radiobutton(camera_select_frame, text="📷 Logitech Webcam", variable=self.camera_var, 
                        value="webcam", command=self.on_camera_selection_changed).pack(side=tk.LEFT, padx=5)
         ttk.Radiobutton(camera_select_frame, text="🎮 Xbox Kinect v2", variable=self.camera_var, 
@@ -234,6 +237,12 @@ class MainApplication:
         # Configure main grid
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
+    
+    def auto_start_kinect(self):
+        """Automatically start Kinect v2 on application startup."""
+        print("Auto-starting Kinect v2...")
+        self.camera_var.set("kinect")
+        self.start_camera()
     
     def on_camera_selection_changed(self):
         """Handle camera selection change."""
