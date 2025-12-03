@@ -93,16 +93,28 @@ class MainApplication:
     
     def create_capture_widgets(self):
         """Create widgets for the capture tab."""
+        # Camera selection frame (NEW)
+        camera_select_frame = ttk.LabelFrame(self.capture_frame, text="Camera Selection")
+        camera_select_frame.grid(row=0, column=0, columnspan=2, padx=10, pady=5, sticky="ew")
+        
+        ttk.Label(camera_select_frame, text="Select Camera:").pack(side=tk.LEFT, padx=5, pady=5)
+        
+        self.camera_var = tk.StringVar(value="webcam")
+        ttk.Radiobutton(camera_select_frame, text="📷 Logitech Webcam", variable=self.camera_var, 
+                       value="webcam", command=self.on_camera_selection_changed).pack(side=tk.LEFT, padx=5)
+        ttk.Radiobutton(camera_select_frame, text="🎮 Xbox Kinect v2", variable=self.camera_var, 
+                       value="kinect", command=self.on_camera_selection_changed).pack(side=tk.LEFT, padx=5)
+        
         # Camera preview frame
         camera_frame = ttk.LabelFrame(self.capture_frame, text="Camera Preview")
-        camera_frame.grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
+        camera_frame.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
         
         self.camera_label = ttk.Label(camera_frame, text="Camera not initialized")
         self.camera_label.pack(padx=10, pady=10)
         
         # Control buttons
         control_frame = ttk.LabelFrame(self.capture_frame, text="Controls")
-        control_frame.grid(row=1, column=0, padx=10, pady=10, sticky="ew")
+        control_frame.grid(row=2, column=0, padx=10, pady=10, sticky="ew")
         
         ttk.Button(control_frame, text="Start Camera", 
                   command=self.start_camera).pack(side=tk.LEFT, padx=5)
@@ -119,7 +131,7 @@ class MainApplication:
         
         # Captured images list
         images_frame = ttk.LabelFrame(self.capture_frame, text="Captured Images")
-        images_frame.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
+        images_frame.grid(row=2, column=1, padx=10, pady=10, sticky="nsew")
         
         self.images_listbox = tk.Listbox(images_frame, height=10)
         self.images_listbox.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
@@ -127,7 +139,7 @@ class MainApplication:
         # Configure grid weights
         self.capture_frame.columnconfigure(0, weight=2)
         self.capture_frame.columnconfigure(1, weight=1)
-        self.capture_frame.rowconfigure(0, weight=1)
+        self.capture_frame.rowconfigure(1, weight=1)
     
     def create_calibration_widgets(self):
         """Create widgets for the calibration tab."""
@@ -223,11 +235,47 @@ class MainApplication:
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
     
+    def on_camera_selection_changed(self):
+        """Handle camera selection change."""
+        selected = self.camera_var.get()
+        was_active = self.is_camera_active
+        
+        if was_active:
+            self.stop_camera()
+        
+        use_kinect = (selected == "kinect")
+        success = self.image_capture.switch_camera(use_kinect)
+        
+        if success:
+            camera_name = "Xbox Kinect v2" if use_kinect else "Logitech Webcam"
+            self.status_var.set(f"📷 Camera switched to {camera_name}")
+            if was_active:
+                self.start_camera()
+        else:
+            camera_name = "Xbox Kinect v2" if use_kinect else "Logitech Webcam"
+            self.status_var.set(f"⚠ Failed to switch to {camera_name}")
+            messagebox.showwarning("Camera Switch Failed", 
+                f"Could not switch to {camera_name}.\n\n"
+                "Make sure the camera is connected and not in use by another application.")
+    
     def start_camera(self):
         """Start camera preview."""
         # Run diagnostics first
         self.image_capture.diagnose_camera_issues()
         
+        # Ensure camera is set to the selected one
+        selected = self.camera_var.get()
+        use_kinect = (selected == "kinect")
+        
+        # If camera type doesn't match selection, switch it
+        if use_kinect and not self.image_capture.kinect_active:
+            if not self.image_capture.switch_camera(use_kinect):
+                self.status_var.set("⚠ Kinect not available, using webcam")
+        elif not use_kinect and self.image_capture.kinect_active:
+            if not self.image_capture.switch_camera(use_kinect):
+                self.status_var.set("⚠ Failed to switch to webcam")
+        
+        # Initialize camera
         if self.image_capture.initialize_camera():
             self.is_camera_active = True
             self.update_camera_preview()

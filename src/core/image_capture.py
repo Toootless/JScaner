@@ -36,16 +36,66 @@ class ImageCapture:
         self.use_kinect = use_kinect
         self.kinect = None
         self.kinect_active = False
+        self.current_camera_type = None  # Track which camera is active
         
         # Try to initialize Kinect if enabled
         if KINECT_AVAILABLE and use_kinect:
             self.kinect = KinectCapture()
             if self.kinect.is_available() and self.kinect.initialize():
                 self.kinect_active = True
+                self.current_camera_type = "kinect"
                 print("✓ Kinect sensor initialized and ready")
             else:
                 print("⚠ Kinect not available, will use webcam")
                 self.kinect = None
+                self.kinect_active = False
+    
+    def switch_camera(self, use_kinect: bool) -> bool:
+        """
+        Switch between Kinect and webcam at runtime.
+        
+        Args:
+            use_kinect: True to use Kinect, False to use webcam
+            
+        Returns:
+            True if switch was successful, False otherwise
+        """
+        print(f"\n📷 Switching camera... {'Kinect' if use_kinect else 'Webcam'}")
+        
+        # Stop current camera
+        if self.is_recording or self.cap is not None or self.kinect_active:
+            self.release()
+        
+        self.use_kinect = use_kinect
+        
+        if use_kinect:
+            # Try to switch to Kinect
+            if KINECT_AVAILABLE and self.kinect is None:
+                self.kinect = KinectCapture()
+            
+            if self.kinect and self.kinect.is_available():
+                if self.kinect.initialize():
+                    self.kinect_active = True
+                    self.current_camera_type = "kinect"
+                    print("✓ Switched to Kinect v2")
+                    return True
+                else:
+                    print("⚠ Failed to initialize Kinect")
+                    self.kinect_active = False
+                    return False
+            else:
+                print("⚠ Kinect not available")
+                return False
+        else:
+            # Switch to webcam
+            self.kinect_active = False
+            if self.initialize_camera():
+                self.current_camera_type = "webcam"
+                print("✓ Switched to Webcam")
+                return True
+            else:
+                print("⚠ Failed to initialize Webcam")
+                return False
         
     def diagnose_camera_issues(self):
         """
