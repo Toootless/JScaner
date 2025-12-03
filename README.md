@@ -117,13 +117,26 @@ python main.py
 ## Camera Setup
 
 ### Kinect v1 (Xbox 360)
-- **Status**: ✓ Fully Supported
-- **Setup**: Connect to USB port, install Windows drivers, select in GUI
-- **Docs**: See [KINECT_V1_INTEGRATION.md](docs/KINECT_V1_INTEGRATION.md)
+- **Status**: ✅ **FULLY WORKING**
+- **Setup**: Install Windows SDK 1.8, connect to USB, select in GUI
+- **Driver**: Uses standard Windows Kinect drivers via OpenCV
+- **Frame Size**: 640x480 @ 30 FPS
+- **Resolution**: 640x480 RGB (no depth support in this build)
+- **Instructions**: See [Kinect v1 Setup Guide](docs/KINECT_V1_INTEGRATION.md)
 
 ### Standard Webcam (Logitech C920, etc.)
-- **Status**: ✓ Fully Supported
+- **Status**: ✅ Fully Supported
 - **Setup**: Connect USB, select in Camera Settings, ready to use
+- **Resolution**: 1920x1080 (Full HD)
+- **Frame Rate**: 30 FPS
+
+### Camera Selection in JScaner
+1. Launch JScaner: `python main.py`
+2. Look at **Camera Settings** panel (left sidebar)
+3. Click radio button:
+   - ⭕ **🎮 Xbox Kinect v1** → Use Kinect camera
+   - ⭕ **📷 Logitech Webcam** → Use USB webcam
+4. Camera preview updates immediately
 
 ## Technical Details
 
