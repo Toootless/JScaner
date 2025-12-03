@@ -1,8 +1,11 @@
 """
 Kinect v1 (Xbox 360) Camera Capture Module
 
-Provides Kinect v1 sensor support via OpenCV with Windows drivers.
-Falls back to MSR Kinect SDK if available.
+Provides Kinect v1 sensor support via:
+1. PyUSB for direct USB access (libusbK driver)
+2. libfreenect library (if compiled)
+3. OpenCV camera interface (standard Windows driver fallback)
+Falls back to status pattern if none available.
 """
 
 import numpy as np
@@ -13,10 +16,24 @@ import sys
 import cv2
 import os
 
+# Try to import USB backend first (for libusbK)
+try:
+    from .kinect_v1_pyusb import KinectV1PyUSB
+    PYUSB_AVAILABLE = True
+except ImportError:
+    PYUSB_AVAILABLE = False
+
+# Try to import libfreenect backend
+try:
+    from .kinect_v1_libfreenect import KinectV1LibFreenect
+    LIBFREENECT_AVAILABLE = True
+except ImportError:
+    LIBFREENECT_AVAILABLE = False
+
 class KinectCapture:
     """
     Captures RGB and depth images from Kinect v1 (Xbox 360) sensor.
-    Uses OpenCV or MSR Kinect SDK.
+    Supports both libfreenect (for libusbK drivers) and OpenCV (for standard cameras).
     """
     
     def __init__(self):
@@ -26,8 +43,25 @@ class KinectCapture:
         self.is_capturing = False
         self.kinect_device = None
         self.kinect_dll = None
+        self.cached_device_idx = None
+        self.backend = None  # Will be set to pyusb, libfreenect, or opencv backend
         
-        # Check for Kinect availability
+        # Try backends in priority order:
+        # 1. PyUSB (for libusbK controlled devices)
+        if PYUSB_AVAILABLE:
+            self.backend = KinectV1PyUSB()
+            if self.backend.is_available():
+                self.available = True
+                return
+        
+        # 2. libfreenect (if compiled and available)
+        if LIBFREENECT_AVAILABLE:
+            self.backend = KinectV1LibFreenect()
+            if self.backend.is_available():
+                self.available = True
+                return
+        
+        # 3. Fall back to OpenCV detection
         self.available = self._check_kinect_availability()
     
     def _check_kinect_availability(self) -> bool:
@@ -69,17 +103,22 @@ class KinectCapture:
     
     def initialize(self) -> bool:
         """
-        Initialize Kinect v1 connection via OpenCV.
+        Initialize Kinect v1 connection.
         
         Returns:
             True if successful, False otherwise
         """
         if not self.available:
-            print("ℹ  Kinect v1 not detected via Windows drivers")
+            print("ℹ  Kinect v1 not detected")
             return False
         
         try:
-            print("✓ Kinect v1 sensor available")
+            # If using libfreenect backend, initialize it
+            if self.backend is not None:
+                return self.backend.initialize()
+            
+            # Otherwise using OpenCV backend
+            print("✓ Kinect v1 sensor available via OpenCV")
             return True
             
         except Exception as e:
@@ -109,7 +148,11 @@ class KinectCapture:
             return None
         
         try:
-            # Try to capture frame from Kinect v1 via OpenCV
+            # If using libfreenect backend, use it
+            if self.backend is not None:
+                return self.backend.get_rgb_frame()
+            
+            # Otherwise try OpenCV capture
             frame = self._capture_kinect_frame()
             if frame is not None and frame.size > 0:
                 return frame
@@ -129,24 +172,44 @@ class KinectCapture:
             RGB frame as numpy array (640x480x3) or None
         """
         try:
-            # Try different device indices for Kinect
-            for device_idx in [0, 1, 2]:
-                cap = cv2.VideoCapture(device_idx)
-                if not cap.isOpened():
-                    continue
+            # Use cached device index if available (avoids repeated slow device enumeration)
+            if self.cached_device_idx is not None:
+                cap = cv2.VideoCapture(self.cached_device_idx, cv2.CAP_DSHOW)
+                cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+                cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+                cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Reduce buffering for faster frames
                 
-                # Try to read a frame
-                ret, frame = cap.read()
-                cap.release()
-                
-                if ret and frame is not None and frame.size > 0:
-                    # Ensure frame is 640x480
-                    if frame.shape != (480, 640, 3):
-                        frame = cv2.resize(frame, (640, 480))
+                if cap.isOpened():
+                    ret, frame = cap.read()
+                    cap.release()
                     
-                    # Verify it's not pure black (check if it has some variation)
-                    if frame.max() > 10:  # Not a black frame
-                        return frame
+                    if ret and frame is not None and frame.size > 0:
+                        if frame.shape != (480, 640, 3):
+                            frame = cv2.resize(frame, (640, 480))
+                        if frame.max() > 10:  # Not pure black
+                            return frame
+                
+                # Cached device failed, clear it
+                self.cached_device_idx = None
+            
+            # Try to find available device (quick check only)
+            for device_idx in [0, 1]:  # Only check 0 and 1 for speed
+                cap = cv2.VideoCapture(device_idx, cv2.CAP_DSHOW)
+                cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+                cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+                cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+                
+                if cap.isOpened():
+                    ret, frame = cap.read()
+                    cap.release()
+                    
+                    if ret and frame is not None and frame.size > 0:
+                        if frame.shape != (480, 640, 3):
+                            frame = cv2.resize(frame, (640, 480))
+                        
+                        if frame.max() > 10:  # Not pure black
+                            self.cached_device_idx = device_idx  # Cache for next time
+                            return frame
             
             # No valid frame found
             return None

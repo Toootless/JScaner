@@ -142,7 +142,7 @@ class ImageCapture:
             
             # If Kinect is active, just return True - will use frame display
             if self.kinect_active and self.kinect is not None:
-                print("Using Kinect v2 for preview (test pattern)")
+                print("Using Kinect v1 for preview (test pattern)")
                 return True
             
             # Release any existing capture first
@@ -490,10 +490,10 @@ class ImageCapture:
         Get the type of camera being used.
         
         Returns:
-            "Kinect v2" if using Kinect, "Webcam" if using webcam
+            "Kinect v1" if using Kinect, "Webcam" if using webcam
         """
         if self.kinect_active:
-            return "Kinect v2"
+            return "Kinect v1"
         return "Webcam"
     
     def release(self):

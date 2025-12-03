@@ -105,7 +105,7 @@ class MainApplication:
         self.camera_var = tk.StringVar(value="kinect")
         ttk.Radiobutton(camera_select_frame, text="📷 Logitech Webcam", variable=self.camera_var, 
                        value="webcam", command=self.on_camera_selection_changed).pack(side=tk.LEFT, padx=5)
-        ttk.Radiobutton(camera_select_frame, text="🎮 Xbox Kinect v2", variable=self.camera_var, 
+        ttk.Radiobutton(camera_select_frame, text="🎮 Xbox Kinect v1", variable=self.camera_var, 
                        value="kinect", command=self.on_camera_selection_changed).pack(side=tk.LEFT, padx=5)
         
         # Camera preview frame
@@ -239,8 +239,8 @@ class MainApplication:
         self.root.rowconfigure(0, weight=1)
     
     def auto_start_kinect(self):
-        """Automatically start Kinect v2 on application startup."""
-        print("Auto-starting Kinect v2...")
+        """Automatically start Kinect v1 on application startup."""
+        print("Auto-starting Kinect v1...")
         self.camera_var.set("kinect")
         self.start_camera()
     
@@ -256,12 +256,12 @@ class MainApplication:
         success = self.image_capture.switch_camera(use_kinect)
         
         if success:
-            camera_name = "Xbox Kinect v2" if use_kinect else "Logitech Webcam"
+            camera_name = "Xbox Kinect v1" if use_kinect else "Logitech Webcam"
             self.status_var.set(f"📷 Camera switched to {camera_name}")
             if was_active:
                 self.start_camera()
         else:
-            camera_name = "Xbox Kinect v2" if use_kinect else "Logitech Webcam"
+            camera_name = "Xbox Kinect v1" if use_kinect else "Logitech Webcam"
             self.status_var.set(f"⚠ Failed to switch to {camera_name}")
             messagebox.showwarning("Camera Switch Failed", 
                 f"Could not switch to {camera_name}.\n\n"
@@ -294,8 +294,8 @@ class MainApplication:
             self.status_var.set(f"Camera started - {camera_type}")
             
             # Check if using Kinect
-            if camera_type == "Kinect v2":
-                self.status_var.set("✓ Kinect v2 activated - RGB + Depth enabled!")
+            if camera_type == "Kinect v1":
+                self.status_var.set("✓ Kinect v1 activated - RGB enabled!")
             # Check if C920 compatible
             elif hasattr(self.image_capture, 'get_camera_info'):
                 camera_info = self.image_capture.get_camera_info()
