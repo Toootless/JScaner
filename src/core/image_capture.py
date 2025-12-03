@@ -2,7 +2,7 @@
 Image Capture Module
 
 Handles camera interface and image acquisition for 3D scanning with improved error handling.
-Supports both standard webcams and Kinect v2 sensors.
+Supports both standard webcams and Kinect v1 (Xbox 360) sensors.
 """
 
 import cv2
@@ -77,7 +77,7 @@ class ImageCapture:
                 if self.kinect.initialize():
                     self.kinect_active = True
                     self.current_camera_type = "kinect"
-                    print("✓ Switched to Kinect v2")
+                    print("✓ Switched to Kinect v1")
                     return True
                 else:
                     print("⚠ Failed to initialize Kinect")
