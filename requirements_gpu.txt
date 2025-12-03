@@ -3,10 +3,20 @@ opencv-python>=4.8.0
 numpy>=1.24.0
 open3d>=0.17.0
 
-# GPU acceleration (optional)
-# Uncomment these for GPU support:
-# cupy-cuda12x>=12.0.0  # For NVIDIA GPUs with CUDA 12.x
-# opencv-contrib-python>=4.8.0  # OpenCV with additional modules
+# GPU acceleration - NVIDIA CUDA Toolkit 12.4+ required
+# Numba: JIT compilation for CUDA and CPU
+numba>=0.62.0          # JIT compiler for fast numerical code on GPU
+# CuPy: NumPy-like GPU array library (requires CUDA toolkit)
+# cupy-cuda12x>=12.0.0  # Uncomment if CUDA 12.x is installed
+# PyTorch: Deep learning framework with GPU support
+# torch>=2.1.0          # Uncomment for GPU-accelerated machine learning
+# torchvision>=0.16.0   # Computer vision with PyTorch
+# torchaudio>=2.1.0     # Audio processing with PyTorch
+# OpenCV with CUDA acceleration
+opencv-contrib-python>=4.8.0  # OpenCV with additional GPU-ready modules
+# Other GPU optimizations
+numexpr>=2.8.0         # Vectorized operations
+bottleneck>=1.3.0      # Optimized NumPy functions
 
 # GUI and visualization
 tkinter-superwidgets>=0.2.0

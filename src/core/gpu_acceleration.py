@@ -2,6 +2,7 @@
 GPU Acceleration Module
 
 Provides GPU-accelerated alternatives for intensive operations.
+Supports NVIDIA CUDA with Numba, CuPy, PyTorch, and OpenCV GPU acceleration.
 """
 
 import numpy as np
@@ -12,25 +13,55 @@ import sys
 # Check for GPU support
 HAS_CUDA = False
 HAS_CUPY = False
+HAS_NUMBA_CUDA = False
+HAS_TORCH_CUDA = False
+CUDA_VERSION = None
 
+# Check Numba CUDA support
+try:
+    from numba import cuda as numba_cuda
+    if numba_cuda.is_available():
+        HAS_NUMBA_CUDA = True
+        CUDA_VERSION = numba_cuda.runtime.get_version()
+        print(f"✓ Numba CUDA available (CUDA {CUDA_VERSION})")
+    else:
+        print("Numba CUDA not available - using CPU JIT compilation")
+except (ImportError, RuntimeError) as e:
+    print(f"Numba CUDA not available: {e}")
+
+# Check CuPy (NumPy on GPU)
 try:
     import cupy as cp
     HAS_CUPY = True
-    print("CuPy (GPU acceleration) available")
+    HAS_CUDA = True
+    print("✓ CuPy (GPU array acceleration) available")
 except ImportError as e:
-    print(f"CuPy not available - using CPU only")
+    print(f"CuPy not available - NumPy operations on CPU")
 except Exception as e:
     print(f"CuPy import error: {e}")
+
+# Check PyTorch CUDA support
+try:
+    import torch
+    if torch.cuda.is_available():
+        HAS_TORCH_CUDA = True
+        print(f"✓ PyTorch CUDA available ({torch.cuda.get_device_name(0)})")
+    else:
+        print("PyTorch installed but CUDA not available")
+except ImportError:
+    print("PyTorch not installed")
+except Exception as e:
+    print(f"PyTorch CUDA error: {e}")
 
 # Check OpenCV CUDA support
 try:
     if cv2.cuda.getCudaEnabledDeviceCount() > 0:
         HAS_CUDA = True
-        print(f"OpenCV CUDA available - {cv2.cuda.getCudaEnabledDeviceCount()} GPU(s) detected")
+        print(f"✓ OpenCV CUDA available - {cv2.cuda.getCudaEnabledDeviceCount()} GPU(s) detected")
     else:
-        print("OpenCV CUDA not available - using CPU only")
+        print("OpenCV CUDA not available - using CPU version")
 except AttributeError:
-    print("OpenCV compiled without CUDA support")
+    print("OpenCV compiled without CUDA support - upgrade with: pip install opencv-contrib-python")
 
 class GPUAccelerator:
     """Provides GPU-accelerated operations when available."""
