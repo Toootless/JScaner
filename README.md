@@ -1,128 +1,151 @@
-# JScaner
+# Kinect v1 Scanner - Professional 3D Scanning Suite
 
-A Python 3D scanning application that reconstructs 3D objects from multiple photographs taken against a reference grid. Supports both advanced Open3D reconstruction and fallback methods for maximum compatibility.
+[![Version](https://img.shields.io/badge/version-2.1-blue.svg)](https://github.com/yourusername/kinect-scanner)
+[![Status](https://img.shields.io/badge/status-Production%20Ready-green.svg)](https://github.com/yourusername/kinect-scanner)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 
-## Features
+A professional-grade 3D scanning application for Kinect v1 (Xbox 360 Kinect) cameras on Windows 10/11, featuring an intuitive graphical interface with automatic multi-camera detection.
 
-- **Advanced Grid Detection**: Multiple algorithms for detecting calibration patterns including 3D printer beds
-- **Dual Camera Support**: Works with Kinect v1 (Xbox 360) or standard USB webcams
-- **GPU Acceleration**: NVIDIA RTX 3060 support with CuPy for enhanced performance
-- **Auto-Load Calibration**: Automatically loads last saved calibration on startup
-- **External Image Import**: Load images from outside sources for processing or calibration
-- **Custom Image Naming**: Name captured images with custom filenames
-- **Fallback 3D Reconstruction**: Works without Open3D using SciPy and scikit-learn
-- **Multi-view Processing**: Analyzes multiple photos to reconstruct 3D geometry
-- **STL Export**: Generates standard 3D model files for 3D printing with fallback support
-- **Interactive GUI**: User-friendly tabbed interface for image capture and processing
-- **Enhanced Computer Vision**: Harris corner detection, CLAHE preprocessing, and line-based grid detection
+## 🎯 Key Features
 
-## System Requirements
+### Core Scanning
+- **📷 Live Camera Preview** - Real-time 640×480 video feed from any camera
+- **Single Image Capture** - One-click to save high-quality images
+- **🔄 Batch Capture** - Automated multi-image collection with configurable intervals (0.2-5 seconds)
+- **📊 Real-time Statistics** - Live counter showing captured image count
+- **💾 Manifest Export** - Automatic JSON metadata export
 
-### Python Compatibility
-- **Python 3.14**: Fully supported with fallback 3D reconstruction
-- **Python 3.11-3.13**: Full Open3D support available
-- **Python 3.8-3.10**: Legacy support (may require older dependency versions)
+### Multi-Camera Support (v2.1)
+- **🔍 Auto-Detection** - Automatically scans and lists all connected cameras
+- **📱 Camera Selection** - Simple dropdown menu to switch cameras instantly
+- **🔄 Refresh Button** - Rescan system for newly connected devices
+- **📝 Camera Tracking** - Records camera ID and properties in manifest.json
+- **⚡ Fast Switching** - Switch cameras in <2 seconds
 
-### Hardware
-- **Camera Options**:
-  - Kinect v1 (Xbox 360 Kinect) - preferred with Windows drivers
-  - Logitech HD Pro Webcam C920 (standard USB webcam)
-  - Any OpenCV-compatible camera
-- **NVIDIA GPU**: Optional, enables CuPy acceleration (RTX 3060 tested)
-- Reference grid (3D printer bed or printed calibration pattern)
-- Windows/Linux/macOS
+### User Interface
+- **🎨 Professional GUI** - Clean, intuitive tkinter-based interface
+- **⚙️ No Command-Line** - Everything is point-and-click
+- **🚀 Fast Startup** - Minimal overhead, instant camera access
+- **📁 Quick Folder Access** - One-click to open captured images directory
 
-### GPU Acceleration (Enabled)
-- **NVIDIA RTX 3060** (11GB VRAM) - Fully supported and tested
-- **CUDA 13.0** toolkit installed and configured
-- **CuPy 13.6.0** library for GPU-accelerated processing
-- Provides significant performance improvements for point cloud processing and reconstruction
+## 📋 System Requirements
 
-### Webcam Specifications (C920)
-- **Resolution**: 1920x1080 (Full HD)
-- **Frame Rate**: 30 FPS
-- **Autofocus**: Yes (important for sharp grid detection)
-- **Field of View**: 78° diagonal
-- **Lens**: Carl Zeiss optics with 20-step autofocus
+| Component | Requirement |
+|-----------|------------|
+| **OS** | Windows 10 or Windows 11 |
+| **Python** | 3.11 or later (3.12, 3.13, 3.14 supported) |
+| **RAM** | 2 GB minimum (4 GB recommended) |
+| **Storage** | 5 GB free space |
+| **USB** | Direct USB 2.0/3.0 connection |
+| **Camera** | Xbox 360 Kinect v1 + power supply |
 
-## Installation
+## 🚀 Quick Start
 
-### Python 3.10+ Installation (Current Setup)
-
-1. Clone or download this repository
-2. Install core dependencies:
-   ```bash
-   pip install numpy opencv-python scipy scikit-learn matplotlib tqdm cupy open3d pillow trimesh
-   ```
-
-3. For GPU acceleration (NVIDIA GPUs with CUDA 13.0):
-   ```bash
-   pip install cupy
-   ```
-
-### Python 3.11-3.13 Installation (Full Open3D Support)
-
-1. Clone or download this repository  
-2. Install all dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-### Verify Installation
+### 30-Second Setup
 
 ```bash
-python main.py
+# Extract deployment package
+unzip Kinect_Scanner_Deployment.zip
+
+# Run automated setup (handles everything)
+AUTOMATED_SETUP.bat
+
+# Launch the scanner
+run_kinect_scanner_gui.bat
 ```
 
-You should see:
-- ✓ GPU acceleration status
-- ✓ Camera detection
-- ✓ 3D reconstruction engine status
+### First Scan
 
-## Usage
+1. Launch `run_kinect_scanner_gui.bat`
+2. See "Camera Selection" dropdown at top
+3. Try each camera to find your Kinect
+4. Click **"📷 Capture Single Image"**
+5. Images save to `data/captured/`
 
-1. **Setup**: Calibration auto-loads from `cal.json` if available
-2. **Capture**: Take multiple photos using the built-in camera interface
-   - Click "Capture Image" to save frames
-   - Enter custom names or use auto-numbering
-   - View save location with "Show Save Location" button
-3. **Import**: Load external images with "Load Images" button
-   - Select purpose: Processing or Calibration
-   - Images marked with [EXT] prefix
-4. **Process**: Run 3D reconstruction with GPU acceleration
-5. **Export**: Save as STL file for 3D printing
+## 📦 Installation
 
-### Quick Start
+### Method 1: Automated (Recommended)
+
+```batch
+# Windows batch file - handles everything
+AUTOMATED_SETUP.bat
+```
+
+This automatically:
+- Downloads Python 3.12 (if needed)
+- Installs Visual C++ Runtime (if needed)
+- Installs all Python packages
+- Verifies Kinect hardware
+- Starts the scanner
+
+### Method 2: Manual Installation
 
 ```bash
-python main.py
+# 1. Install Python 3.11+ from python.org
+
+# 2. Install required packages
+pip install -r requirements_kinect_scanner.txt
+
+# 3. Install Kinect drivers (see docs/KINECT_TARGET_PC_SETUP.md)
+
+# 4. Connect Kinect v1 hardware
+
+# 5. Run the scanner
+python kinect_scanner_gui.py
 ```
 
-### New Features
+### Method 3: CLI Version (Power Users)
 
-- **Auto-Load**: Last calibration loads automatically on startup
-- **Custom Naming**: Name each captured image before saving
-- **Import Images**: Load external photos for processing or calibration
-- **Save Location**: View and access captured image directory
-- **GPU Status**: Real-time GPU acceleration status display
+```bash
+# Original command-line interface
+python kinect_scanner.py
+```
 
-## Project Structure
+## 📚 Documentation
 
-- `src/core/`: Core computer vision and 3D reconstruction algorithms
-- `src/gui/`: User interface components
-- `data/`: Sample data and calibration patterns
-- `examples/`: Example usage and tutorials
-- `tests/`: Unit tests
+### Quick Start Guides
+- **[MULTI_CAMERA_QUICK_REF.md](MULTI_CAMERA_QUICK_REF.md)** - 2-minute overview of multi-camera features
+- **[KINECT_SCANNER_GUI_QUICK_START.md](KINECT_SCANNER_GUI_QUICK_START.md)** - Step-by-step quickstart
+- **[START_HERE_KINECT_SCANNER.md](START_HERE_KINECT_SCANNER.md)** - Complete beginner guide
 
-## Camera Setup
+### Feature Guides
+- **[KINECT_SCANNER_GUI_GUIDE.md](KINECT_SCANNER_GUI_GUIDE.md)** - Complete GUI reference & controls
+- **[MULTI_CAMERA_GUIDE.md](MULTI_CAMERA_GUIDE.md)** - Multi-camera support & troubleshooting
+- **[CHOOSE_YOUR_VERSION.md](CHOOSE_YOUR_VERSION.md)** - GUI vs CLI comparison
 
-### Kinect v1 (Xbox 360)
-- **Status**: ✅ **FULLY WORKING**
-- **Setup**: Install Windows SDK 1.8, connect to USB, select in GUI
-- **Driver**: Uses standard Windows Kinect drivers via OpenCV
-- **Frame Size**: 640x480 @ 30 FPS
-- **Resolution**: 640x480 RGB (no depth support in this build)
-- **Instructions**: See [Kinect v1 Setup Guide](docs/KINECT_V1_INTEGRATION.md)
+### Troubleshooting
+- **[CAMERA_SELECTION_TROUBLESHOOTING.md](CAMERA_SELECTION_TROUBLESHOOTING.md)** - Camera identification issues
+- **[docs/KINECT_TARGET_PC_SETUP.md](docs/KINECT_TARGET_PC_SETUP.md)** - Hardware setup instructions
+- **[INDEX_DOCUMENTATION.md](INDEX_DOCUMENTATION.md)** - Master documentation index
+
+## 🔧 Camera Selection (Multi-Camera v2.1)
+
+### Identifying Your Kinect
+
+Look for these characteristics:
+
+| Feature | Kinect v1 | Other Cameras |
+|---------|-----------|---------------|
+| **Resolution** | 640×480 ✓ | Usually different |
+| **Image** | Rectangular | Wide-angle |
+| **Distortion** | None | Possible fisheye |
+| **FPS** | 30 @ 640×480 | Varies |
+
+### How to Find It
+
+1. Launch GUI (`run_kinect_scanner_gui.bat`)
+2. Click dropdown at top - see all cameras
+3. Try each camera by clicking
+4. Watch live preview
+5. When you see the Kinect image (640×480, rectangular) → **use that one**
+
+### If Kinect Not Found
+
+1. Click the **"🔄 Refresh"** button to rescan
+2. Check USB connection
+3. Verify Kinect power supply is plugged in
+4. See [CAMERA_SELECTION_TROUBLESHOOTING.md](CAMERA_SELECTION_TROUBLESHOOTING.md) for detailed help
 
 ### Standard Webcam (Logitech C920, etc.)
 - **Status**: ✅ Fully Supported

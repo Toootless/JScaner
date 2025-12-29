@@ -1,0 +1,35 @@
+# JScaner - Kinect Scanner Minimal Requirements
+# This file contains ONLY the dependencies needed for the standalone Kinect v1 scanner
+# Use this on the target PC that runs: python kinect_scanner.py
+#
+# Installation: pip install -r requirements_kinect_scanner.txt
+#
+# Last Updated: December 29, 2025
+
+# Core image capture and processing
+opencv-python>=4.8.0          # Camera capture and basic image processing
+numpy>=1.24.0                 # Numerical operations
+
+# Data handling
+Pillow>=10.0.0               # Image file support (JPEG, PNG, etc.)
+tqdm>=4.65.0                 # Progress bars for batch operations
+
+# Configuration and metadata
+# Note: json is built-in to Python, no installation needed
+
+# Optional for enhanced performance (uncomment if needed)
+# scipy>=1.11.0              # Advanced image filtering
+# scikit-image>=0.21.0       # Additional image processing
+
+# Installation instructions for Windows 11:
+#
+# 1. Ensure Python 3.11+ is installed and added to PATH
+# 2. Open PowerShell in the JScaner folder
+# 3. Run: pip install -r requirements_kinect_scanner.txt
+# 4. Wait for all packages to install
+# 5. Verify with: python kinect_scanner.py
+#
+# If you get "module not found" errors:
+#   - Make sure you're in the correct folder
+#   - Try: pip install --upgrade -r requirements_kinect_scanner.txt
+#   - Check Python version: python --version (must be 3.11+)
