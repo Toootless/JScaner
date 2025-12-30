@@ -42,7 +42,7 @@ Test Result:
 
 Test command:
 ```powershell
-cd "C:\Users\johnj\OneDrive\Documents\VS_projects\3dscaning"
+cd "C:\Users\johnj\OneDrive\Documents\____3dScanner\3dscaning"
 python -c "from src.core.kinect_capture import KinectCapture; k = KinectCapture(); k.initialize()"
 ```
 

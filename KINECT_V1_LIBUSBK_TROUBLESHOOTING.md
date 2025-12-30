@@ -63,7 +63,7 @@ If you have Visual Studio C++ tools:
 4. **Copy DLL to JScaner**:
    ```bash
    Copy-Item "C:\libfreenect\build\lib\Release\freenect.dll" `
-     -Destination "C:\Users\johnj\OneDrive\Documents\VS_projects\3dscaning\freenect.dll"
+     -Destination "C:\Users\johnj\OneDrive\Documents\____3dScanner\3dscaning\freenect.dll"
    ```
 
 5. **Restart JScaner**

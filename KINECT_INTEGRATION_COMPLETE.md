@@ -51,7 +51,7 @@ Kinect for Windows v2 has been successfully integrated into JScaner with full su
 
 ### Starting the Application
 ```powershell
-cd "C:\Users\johnj\OneDrive\Documents\VS_projects\3dscaning"
+cd "C:\Users\johnj\OneDrive\Documents\____3dScanner\3dscaning"
 python main.py
 ```
 

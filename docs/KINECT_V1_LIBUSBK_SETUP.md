@@ -28,7 +28,7 @@ Your Kinect v1 has been detected with **libusbK drivers**, which means it's usin
 3. **Copy libfreenect DLL to project**:
    ```powershell
    Copy-Item "C:\vcpkg\installed\x64-windows\bin\freenect.dll" `
-     -Destination "c:\Users\johnj\OneDrive\Documents\VS_projects\3dscaning\freenect.dll"
+     -Destination "c:\Users\johnj\OneDrive\Documents\____3dScanner\3dscaning\freenect.dll"
    ```
 
 4. **Restart JScaner**:

@@ -51,14 +51,28 @@ class CameraDetector:
     @staticmethod
     def get_available_cameras() -> Dict[int, str]:
         """
-        Detect all available cameras on the system.
+        Detect all available cameras on the system including Kinect v1.
         
         Returns:
-            Dict with camera_id as key and camera_name as value
+            Dict with camera_id/name as key and camera_name as value
         """
         available_cameras = {}
         
-        # Try cameras 0-9
+        # Check for Kinect v1 via .NET SDK
+        try:
+            sys.path.insert(0, str(BASE_DIR / "src" / "core"))
+            from kinect_v1_dotnet import KinectV1Camera
+            
+            # Try to initialize Kinect
+            kinect_test = KinectV1Camera()
+            if kinect_test.initialize():
+                available_cameras["kinect_v1"] = "Kinect v1 (640x480 @ 30fps via .NET SDK)"
+                kinect_test.release()
+        except Exception as e:
+            # Kinect not available, skip silently
+            pass
+        
+        # Try standard cameras 0-9
         for camera_id in range(10):
             cap = cv2.VideoCapture(camera_id)
             if cap.isOpened():
@@ -168,13 +182,13 @@ class KinectScannerGUI:
         # Camera dropdown
         if self.available_cameras:
             camera_options = [f"{cam_id}: {name}" for cam_id, name in self.available_cameras.items()]
-            camera_dropdown = OptionMenu(
+            self.camera_dropdown = OptionMenu(
                 camera_select_frame,
                 self.camera_var,
                 *[str(cam_id) for cam_id in self.available_cameras.keys()],
                 command=self._on_camera_changed
             )
-            camera_dropdown.pack(side=LEFT, padx=5)
+            self.camera_dropdown.pack(side=LEFT, padx=5)
             
             # Update camera_var display text
             self.camera_var.set(str(self.camera_id))
@@ -346,20 +360,60 @@ class KinectScannerGUI:
         return None
     
     def _refresh_cameras(self):
-        """Refresh available cameras list."""
+        """Refresh available cameras list and update dropdown."""
         self._update_status("Scanning for cameras...")
+        
+        # Release current camera
+        was_running = self.is_running
+        if self.cap:
+            self.is_running = False
+            self.cap.release()
+            self.cap = None
+        
+        # Re-scan cameras
         self.available_cameras = CameraDetector.get_available_cameras()
         
         if self.available_cameras:
             self._update_status(f"Found {len(self.available_cameras)} camera(s)")
+            
+            # Rebuild the dropdown menu
+            if hasattr(self, 'camera_dropdown'):
+                menu = self.camera_dropdown["menu"]
+                menu.delete(0, "end")
+                
+                # Add new camera options
+                for cam_id in self.available_cameras.keys():
+                    menu.add_command(
+                        label=f"{cam_id}: {self.available_cameras[cam_id]}",
+                        command=lambda value=str(cam_id): self._on_camera_changed(value)
+                    )
+                
+                # Select first camera if current not available
+                if self.camera_id not in self.available_cameras:
+                    first_cam = list(self.available_cameras.keys())[0]
+                    self.camera_id = first_cam
+                    self.camera_var.set(str(first_cam))
+            
+            # Reconnect if was running
+            if was_running:
+                self._connect_camera()
         else:
             self._update_status("ERROR: No cameras found")
             messagebox.showerror("No Cameras", "No camera devices detected on this system")
     
     def _on_camera_changed(self, new_camera_id: str):
-        """Handle camera selection change."""
+        """Handle camera selection change from dropdown."""
+        self._change_camera(new_camera_id)
+    
+    def _change_camera(self, new_camera_id: str):
+        """Change active camera."""
         try:
-            new_id = int(new_camera_id)
+            # Handle both integer camera IDs and string IDs (like "kinect_v1")
+            if new_camera_id.isdigit():
+                new_id = int(new_camera_id)
+            else:
+                new_id = new_camera_id
+            
             if new_id != self.camera_id:
                 self._update_status(f"Switching to camera {new_id}...")
                 self.camera_id = new_id
@@ -383,21 +437,34 @@ class KinectScannerGUI:
             self._update_status("Invalid camera selection")
     
     def _connect_camera(self) -> bool:
-        """Connect to camera."""
+        """Connect to camera (supports both standard cameras and Kinect v1)."""
         try:
             self._update_status(f"Connecting to camera {self.camera_id}...")
-            self.cap = cv2.VideoCapture(self.camera_id)
             
-            if not self.cap.isOpened():
-                self._update_status(f"ERROR: Could not open camera {self.camera_id}")
-                messagebox.showerror("Camera Error", f"Failed to open camera {self.camera_id}\n\nTry selecting a different camera or run 'Refresh'")
-                return False
-            
-            # Set camera properties
-            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-            self.cap.set(cv2.CAP_PROP_FPS, 30)
-            self.cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
+            # Check if this is Kinect v1
+            if self.camera_id == "kinect_v1":
+                sys.path.insert(0, str(BASE_DIR / "src" / "core"))
+                from kinect_v1_dotnet import KinectV1Camera
+                
+                self.cap = KinectV1Camera()
+                if not self.cap.initialize():
+                    self._update_status("ERROR: Could not initialize Kinect v1")
+                    messagebox.showerror("Kinect Error", "Failed to initialize Kinect v1\n\nMake sure:\n- Kinect is plugged in and powered\n- No other apps are using Kinect\n- Kinect SDK v1.8 is installed")
+                    return False
+            else:
+                # Standard OpenCV camera
+                self.cap = cv2.VideoCapture(self.camera_id)
+                
+                if not self.cap.isOpened():
+                    self._update_status(f"ERROR: Could not open camera {self.camera_id}")
+                    messagebox.showerror("Camera Error", f"Failed to open camera {self.camera_id}\n\nTry selecting a different camera or run 'Refresh'")
+                    return False
+                
+                # Set camera properties
+                self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+                self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+                self.cap.set(cv2.CAP_PROP_FPS, 30)
+                self.cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
             
             # Test frame
             ret, frame = self.cap.read()
@@ -411,6 +478,8 @@ class KinectScannerGUI:
             return True
         except Exception as e:
             self._update_status(f"Connection error: {e}")
+            import traceback
+            traceback.print_exc()
             return False
     
     def _preview_loop(self):
@@ -468,13 +537,34 @@ class KinectScannerGUI:
                 messagebox.showerror("Error", "Failed to capture frame")
                 return
             
-            # Save image
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]
-            filename = f"scan_{timestamp}.jpg"
+            # Generate filename
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            self.captured_count += 1
+            seq_num = str(self.captured_count).zfill(3)
+            filename = f"scan_{timestamp}_{seq_num}.jpg"
             filepath = self.output_dir / filename
             
+            # Save image
             cv2.imwrite(str(filepath), frame)
-            self.captured_count += 1
+            
+            # Save metadata
+            metadata = {
+                "filename": filename,
+                "timestamp": timestamp,
+                "sequence": self.captured_count,
+                "camera": self.available_cameras.get(self.camera_id, str(self.camera_id)),
+                "resolution": {
+                    "width": frame.shape[1],
+                    "height": frame.shape[0]
+                },
+                "format": "BGR"
+            }
+            
+            metadata_file = filepath.with_suffix('.json').name.replace('.jpg', '_metadata.json')
+            metadata_path = self.output_dir / metadata_file
+            with open(metadata_path, 'w') as f:
+                json.dump(metadata, f, indent=2)
+            
             self.capture_count_var.set(str(self.captured_count))
             self._update_status(f"✓ Captured: {filename}")
             
@@ -518,12 +608,36 @@ class KinectScannerGUI:
                 
                 ret, frame = self.cap.read()
                 if ret and frame is not None:
-                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]
-                    filename = f"scan_{timestamp}.jpg"
+                    # Generate filename
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    self.captured_count += 1
+                    seq_num = str(self.captured_count).zfill(3)
+                    filename = f"scan_{timestamp}_{seq_num}.jpg"
                     filepath = self.output_dir / filename
                     
+                    # Save image
                     cv2.imwrite(str(filepath), frame)
-                    self.captured_count += 1
+                    
+                    # Save metadata
+                    metadata = {
+                        "filename": filename,
+                        "timestamp": timestamp,
+                        "sequence": self.captured_count,
+                        "batch_index": i + 1,
+                        "batch_total": count,
+                        "camera": self.available_cameras.get(self.camera_id, str(self.camera_id)),
+                        "resolution": {
+                            "width": frame.shape[1],
+                            "height": frame.shape[0]
+                        },
+                        "format": "BGR"
+                    }
+                    
+                    metadata_file = filepath.with_suffix('.json').name.replace('.jpg', '_metadata.json')
+                    metadata_path = self.output_dir / metadata_file
+                    with open(metadata_path, 'w') as f:
+                        json.dump(metadata, f, indent=2)
+                    
                     self.batch_count = i + 1
                     self.capture_count_var.set(str(self.captured_count))
                     self._update_status(f"Batch: {i+1}/{count}")

@@ -19,7 +19,7 @@ C:\vcpkg\vcpkg install libfreenect:x64-windows
 ### Step 3: Copy freenect.dll to JScaner
 ```powershell
 Copy-Item "C:\vcpkg\installed\x64-windows\bin\freenect.dll" `
-  -Destination "C:\Users\johnj\OneDrive\Documents\VS_projects\3dscaning\freenect.dll"
+  -Destination "C:\Users\johnj\OneDrive\Documents\____3dScanner\3dscaning\freenect.dll"
 ```
 
 ### Step 4: Restart JScaner

@@ -9,7 +9,7 @@
 
 ### 1️⃣ ZIP FILE (Ready to Send)
 **File**: `Kinect_Scanner_Deployment.zip`  
-**Location**: `c:\Users\johnj\OneDrive\Documents\VS_projects\3dscaning\`  
+**Location**: `c:\Users\johnj\OneDrive\Documents\____3dScanner\3dscaning\`  
 **Size**: ~30 KB  
 **Contents**: Complete deployment package  
 
@@ -23,7 +23,7 @@
 
 ### 2️⃣ ORGANIZED DEPLOYMENT FOLDER
 **Folder**: `kinect_scanner_deployment/`  
-**Location**: `c:\Users\johnj\OneDrive\Documents\VS_projects\3dscaning\kinect_scanner_deployment/`  
+**Location**: `c:\Users\johnj\OneDrive\Documents\____3dScanner\3dscaning\kinect_scanner_deployment/`  
 **Structure**:
 ```
 kinect_scanner_deployment/
@@ -204,13 +204,13 @@ If automated setup fails:
 
 ### ZIP File
 ```
-c:\Users\johnj\OneDrive\Documents\VS_projects\3dscaning\
+c:\Users\johnj\OneDrive\Documents\____3dScanner\3dscaning\
 └── Kinect_Scanner_Deployment.zip  (30 KB - SEND THIS!)
 ```
 
 ### Extracted Folder
 ```
-c:\Users\johnj\OneDrive\Documents\VS_projects\3dscaning\
+c:\Users\johnj\OneDrive\Documents\____3dScanner\3dscaning\
 └── kinect_scanner_deployment/
     ├── AUTOMATED_SETUP.bat
     ├── README.md

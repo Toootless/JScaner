@@ -8,8 +8,8 @@ C:\vcpkg\vcpkg install libfreenect:x64-windows
 
 # 3. Copy the DLL to JScaner
 Copy-Item "C:\vcpkg\installed\x64-windows\bin\freenect.dll" `
-  -Destination "C:\Users\johnj\OneDrive\Documents\VS_projects\3dscaning\freenect.dll"
+  -Destination "C:\Users\johnj\OneDrive\Documents\____3dScanner\3dscaning\freenect.dll"
 
 # 4. Restart JScaner
-cd c:\Users\johnj\OneDrive\Documents\VS_projects\3dscaning
+cd c:\Users\johnj\OneDrive\Documents\____3dScanner\3dscaning
 python main.py
