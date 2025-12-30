@@ -1,0 +1,11 @@
+{
+  "filename": "scan_20251230_151509_055.jpg",
+  "timestamp": "20251230_151509",
+  "sequence": 55,
+  "camera": "Kinect v1 (640x480 @ 30fps via .NET SDK)",
+  "resolution": {
+    "width": 640,
+    "height": 480
+  },
+  "format": "BGR"
+}

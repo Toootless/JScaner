@@ -12,6 +12,7 @@ from PIL import Image, ImageTk
 import threading
 import os
 import json
+import glob
 
 # Import core modules
 from core.image_capture import ImageCapture
@@ -37,14 +38,19 @@ class MainApplication:
         # Application state
         self.captured_images = []
         self.calibration_data = None
-        self.current_frame = None
-        self.is_camera_active = False
         self.point_cloud = None
-        self.current_photo = None  # Keep reference to current photo
+        self.image_metadata = []  # Store metadata alongside images
         
-        # Data directories
-        self.data_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'data')
-        self.captured_dir = os.path.join(self.data_dir, 'captured')
+        # Data directories - look in project root first, then fallback to data/
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        
+        # Try project root captured folder first
+        self.captured_dir = os.path.join(project_root, 'captured')
+        if not os.path.exists(self.captured_dir):
+            # Fallback to data/captured
+            self.captured_dir = os.path.join(project_root, 'data', 'captured')
+        
+        self.data_dir = os.path.join(project_root, 'data')
         self.calibration_file = os.path.join(self.data_dir, 'last_calibration.json')
         
         # Ensure directories exist
@@ -57,9 +63,6 @@ class MainApplication:
         
         # Auto-load last calibration
         self.auto_load_calibration()
-        
-        # Auto-start Kinect on startup (prefer Kinect over webcam)
-        self.root.after(500, self.auto_start_kinect)
         
     def create_widgets(self):
         """Create all GUI widgets."""
@@ -96,17 +99,11 @@ class MainApplication:
     
     def create_capture_widgets(self):
         """Create widgets for the capture tab."""
-        # Camera selection frame (NEW)
-        camera_select_frame = ttk.LabelFrame(self.capture_frame, text="Camera Selection")
-        camera_select_frame.grid(row=0, column=0, columnspan=2, padx=10, pady=5, sticky="ew")
+        # Info frame
+        info_frame = ttk.LabelFrame(self.capture_frame, text="Image Processing")
+        info_frame.grid(row=0, column=0, columnspan=2, padx=10, pady=5, sticky="ew")
         
-        ttk.Label(camera_select_frame, text="Select Camera:").pack(side=tk.LEFT, padx=5, pady=5)
-        
-        self.camera_var = tk.StringVar(value="kinect")
-        ttk.Radiobutton(camera_select_frame, text="📷 Logitech Webcam", variable=self.camera_var, 
-                       value="webcam", command=self.on_camera_selection_changed).pack(side=tk.LEFT, padx=5)
-        ttk.Radiobutton(camera_select_frame, text="🎮 Xbox Kinect v1", variable=self.camera_var, 
-                       value="kinect", command=self.on_camera_selection_changed).pack(side=tk.LEFT, padx=5)
+        ttk.Label(info_frame, text="📷 Processing captured images and metadata").pack(side=tk.LEFT, padx=5, pady=5)
         
         # Camera preview frame
         camera_frame = ttk.LabelFrame(self.capture_frame, text="Camera Preview")
@@ -116,20 +113,16 @@ class MainApplication:
         self.camera_label.pack(padx=10, pady=10)
         
         # Control buttons
-        control_frame = ttk.LabelFrame(self.capture_frame, text="Controls")
+        control_frame = ttk.LabelFrame(self.capture_frame, text="Image Management")
         control_frame.grid(row=2, column=0, padx=10, pady=10, sticky="ew")
         
-        ttk.Button(control_frame, text="Start Camera", 
-                  command=self.start_camera).pack(side=tk.LEFT, padx=5)
-        ttk.Button(control_frame, text="Stop Camera", 
-                  command=self.stop_camera).pack(side=tk.LEFT, padx=5)
-        ttk.Button(control_frame, text="Capture Image", 
-                  command=self.capture_single_image).pack(side=tk.LEFT, padx=5)
-        ttk.Button(control_frame, text="Load Images", 
+        ttk.Button(control_frame, text="Load Images from Folder", 
                   command=self.load_external_images).pack(side=tk.LEFT, padx=5)
+        ttk.Button(control_frame, text="Load with Metadata", 
+                  command=self.load_images_with_metadata).pack(side=tk.LEFT, padx=5)
         ttk.Button(control_frame, text="Clear Images", 
                   command=self.clear_images).pack(side=tk.LEFT, padx=5)
-        ttk.Button(control_frame, text="Show Save Location", 
+        ttk.Button(control_frame, text="Show Images Folder", 
                   command=self.show_save_location).pack(side=tk.LEFT, padx=5)
         
         # Captured images list
@@ -238,173 +231,77 @@ class MainApplication:
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
     
-    def auto_start_kinect(self):
-        """Automatically start Kinect v1 on application startup."""
-        print("Auto-starting Kinect v1...")
-        self.camera_var.set("kinect")
-        self.start_camera()
-    
-    def on_camera_selection_changed(self):
-        """Handle camera selection change."""
-        selected = self.camera_var.get()
-        was_active = self.is_camera_active
+    def load_images_with_metadata(self):
+        """Load images from a folder along with their JSON metadata files."""
+        folder = filedialog.askdirectory(title="Select Folder with Images and Metadata")
         
-        if was_active:
-            self.stop_camera()
-        
-        use_kinect = (selected == "kinect")
-        success = self.image_capture.switch_camera(use_kinect)
-        
-        if success:
-            camera_name = "Xbox Kinect v1" if use_kinect else "Logitech Webcam"
-            self.status_var.set(f"📷 Camera switched to {camera_name}")
-            if was_active:
-                self.start_camera()
-        else:
-            camera_name = "Xbox Kinect v1" if use_kinect else "Logitech Webcam"
-            self.status_var.set(f"⚠ Failed to switch to {camera_name}")
-            messagebox.showwarning("Camera Switch Failed", 
-                f"Could not switch to {camera_name}.\n\n"
-                "Make sure the camera is connected and not in use by another application.")
-    
-    def start_camera(self):
-        """Start camera preview."""
-        # Run diagnostics first
-        self.image_capture.diagnose_camera_issues()
-        
-        # Ensure camera is set to the selected one
-        selected = self.camera_var.get()
-        use_kinect = (selected == "kinect")
-        
-        # If camera type doesn't match selection, switch it
-        if use_kinect and not self.image_capture.kinect_active:
-            if not self.image_capture.switch_camera(use_kinect):
-                self.status_var.set("⚠ Kinect not available, using webcam")
-        elif not use_kinect and self.image_capture.kinect_active:
-            if not self.image_capture.switch_camera(use_kinect):
-                self.status_var.set("⚠ Failed to switch to webcam")
-        
-        # Initialize camera
-        if self.image_capture.initialize_camera():
-            self.is_camera_active = True
-            self.update_camera_preview()
-            
-            # Show camera type
-            camera_type = self.image_capture.get_camera_type()
-            self.status_var.set(f"Camera started - {camera_type}")
-            
-            # Check if using Kinect
-            if camera_type == "Kinect v1":
-                self.status_var.set("✓ Kinect v1 activated - RGB enabled!")
-            # Check if C920 compatible
-            elif hasattr(self.image_capture, 'get_camera_info'):
-                camera_info = self.image_capture.get_camera_info()
-                if camera_info.get('is_c920_compatible'):
-                    self.status_var.set("Camera started - C920 optimized")
-                    self.image_capture.optimize_for_3d_scanning()
-        else:
-            self.status_var.set("Camera failed to start - check diagnostics")
-            messagebox.showerror("Camera Error", 
-                "Failed to initialize camera.\n\n"
-                "Check the terminal output for diagnostics.\n\n"
-                "Common fixes:\n"
-                "• Close other camera apps (Skype, Teams, etc.)\n"
-                "• Unplug and reconnect camera\n"
-                "• Try Windows Camera app first")
-    
-    def stop_camera(self):
-        """Stop camera preview."""
-        self.is_camera_active = False
-        self.image_capture.release()
-        self.camera_label.config(image="", text="Camera stopped")
-        self.status_var.set("Camera stopped")
-    
-    def update_camera_preview(self):
-        """Update camera preview in GUI."""
-        if self.is_camera_active:
-            frame = self.image_capture.get_frame()
-            if frame is not None:
-                # Resize frame for display
-                display_frame = cv2.resize(frame, (640, 480))
-                display_frame = cv2.cvtColor(display_frame, cv2.COLOR_BGR2RGB)
-                
-                # Convert to PhotoImage
-                image = Image.fromarray(display_frame)
-                photo = ImageTk.PhotoImage(image)
-                
-                self.camera_label.config(image=photo, text="")
-                self.current_photo = photo  # Keep a reference
-                
-                self.current_frame = frame
-            
-            # Schedule next update
-            self.root.after(50, self.update_camera_preview)
-    
-    def capture_single_image(self):
-        """Capture a single image with optional custom naming."""
-        if self.current_frame is None:
-            messagebox.showwarning("Warning", "No camera frame available. Make sure camera is started.")
+        if not folder:
             return
         
-        # Capture the frame immediately
-        captured_frame = self.current_frame.copy()
-        
-        # Ask if user wants to name the file
-        name_dialog = tk.Toplevel(self.root)
-        name_dialog.title("Name Image")
-        name_dialog.geometry("400x180")
-        name_dialog.transient(self.root)
-        name_dialog.grab_set()
-        
-        tk.Label(name_dialog, text="Enter custom name (or leave blank for auto-naming):", 
-                font=("Arial", 9)).pack(pady=10)
-        
-        name_entry = tk.Entry(name_dialog, width=40)
-        name_entry.pack(pady=5)
-        name_entry.focus()
-        
-        def save_image():
-            custom_name = name_entry.get().strip()
+        try:
+            # Find all JPG files
+            jpg_files = sorted(glob.glob(os.path.join(folder, "*.jpg")))
             
-            # Generate filename
-            if custom_name:
-                filename = f"{custom_name}.png"
-            else:
-                filename = f"image_{len(self.captured_images)+1:03d}.png"
+            if not jpg_files:
+                messagebox.showwarning("No Images", f"No JPG files found in {folder}")
+                return
             
-            # Save to disk
-            filepath = os.path.join(self.captured_dir, filename)
-            success = cv2.imwrite(filepath, captured_frame)
+            loaded_count = 0
+            metadata_count = 0
             
-            if success:
-                # Store image with metadata
-                img_data = {
-                    'image': captured_frame,
-                    'source': 'camera',
-                    'filepath': filepath,
-                    'purpose': 'processing'
-                }
-                self.captured_images.append(img_data)
-                
-                # Update UI
-                self.images_listbox.insert(tk.END, filename)
-                self.status_var.set(f"Saved: {filename} ({len(self.captured_images)} images)")
-            else:
-                messagebox.showerror("Error", f"Failed to save image to {filepath}")
+            for jpg_file in jpg_files:
+                try:
+                    img = cv2.imread(jpg_file)
+                    if img is not None:
+                        # Look for corresponding JSON metadata
+                        json_file = jpg_file.replace('.jpg', '.json')
+                        metadata = {}
+                        
+                        if os.path.exists(json_file):
+                            try:
+                                with open(json_file, 'r') as f:
+                                    metadata = json.load(f)
+                                metadata_count += 1
+                            except json.JSONDecodeError:
+                                print(f"Invalid JSON in {os.path.basename(json_file)}")
+                        
+                        # Store image with metadata
+                        img_data = {
+                            'image': img,
+                            'source': 'processed',
+                            'filepath': jpg_file,
+                            'metadata': metadata,
+                            'purpose': 'processing'
+                        }
+                        self.captured_images.append(img_data)
+                        self.image_metadata.append(metadata)
+                        
+                        # Add to listbox
+                        filename = os.path.basename(jpg_file)
+                        has_meta = " ✓" if metadata else " ⚠"
+                        self.images_listbox.insert(tk.END, f"{filename}{has_meta}")
+                        loaded_count += 1
+                        
+                except Exception as e:
+                    print(f"Failed to load {jpg_file}: {e}")
             
-            name_dialog.destroy()
-        
-        def cancel():
-            name_dialog.destroy()
-        
-        btn_frame = tk.Frame(name_dialog)
-        btn_frame.pack(pady=10)
-        ttk.Button(btn_frame, text="Save", command=save_image).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=cancel).pack(side=tk.LEFT, padx=5)
-        
-        # Allow Enter key to save
-        name_entry.bind('<Return>', lambda e: save_image())
-        name_entry.bind('<Escape>', lambda e: cancel())
+            self.status_var.set(f"Loaded {loaded_count} images ({metadata_count} with metadata)")
+            
+            # Print summary
+            if metadata_count > 0 and self.image_metadata:
+                meta = self.image_metadata[0]
+                print(f"\n📷 Camera Configuration from Metadata:")
+                print(f"   Camera: {meta.get('camera', 'Unknown')}")
+                res = meta.get('resolution', {})
+                print(f"   Resolution: {res.get('width', '?')}x{res.get('height', '?')}")
+                print(f"   Format: {meta.get('format', 'Unknown')}\n")
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load images: {e}")
+    
+    def stop_camera(self):
+        """Compatibility method (no camera in this version)."""
+        self.status_var.set("N/A - Processing mode")
     
     def clear_images(self):
         """Clear all captured images."""
@@ -785,3 +682,42 @@ class MainApplication:
         ttk.Button(btn_frame, text="Open Folder", command=open_folder).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text="Copy Path", command=copy_path).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text="Close", command=location_dialog.destroy).pack(side=tk.LEFT, padx=5)
+    
+    def load_processed_images(self, summary):
+        """Load images that have already been processed from a processor."""
+        try:
+            images = summary.get('images', [])
+            metadata = summary.get('metadata', [])
+            
+            loaded_count = 0
+            for i, img_path in enumerate(images):
+                try:
+                    img = cv2.imread(img_path)
+                    if img is not None:
+                        # Get metadata for this image
+                        meta = metadata[i] if i < len(metadata) else {}
+                        
+                        # Store image with metadata
+                        img_data = {
+                            'image': img,
+                            'source': 'processed',
+                            'filepath': img_path,
+                            'metadata': meta,
+                            'purpose': 'processing'
+                        }
+                        self.captured_images.append(img_data)
+                        self.image_metadata.append(meta)
+                        
+                        # Add to listbox
+                        filename = os.path.basename(img_path)
+                        self.images_listbox.insert(tk.END, f"{filename} ✓")
+                        loaded_count += 1
+                        
+                except Exception as e:
+                    print(f"Failed to load {img_path}: {e}")
+            
+            if loaded_count > 0:
+                self.status_var.set(f"Pre-loaded {loaded_count} processed images")
+            
+        except Exception as e:
+            print(f"Error loading processed images: {e}")
